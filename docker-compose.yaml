@@ -28,10 +28,9 @@ services:
 
   streamlit:
     build: ./streamlit
-    working_dir: /app
     volumes:
       - ./streamlit:/app
-    command: bash -c "ls -l && streamlit run app.py --server.port=8501 --server.enableXsrfProtection=false"
+    command: bash -c "ls -l /app && streamlit run /app/app.py --server.port=8501 --server.enableXsrfProtection=false"
     ports:
       - "8501:8501"
   
