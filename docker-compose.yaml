@@ -13,11 +13,8 @@ services:
   airflow:
     build:
       context: ./airflow
-      pull_policy: build
-    depends_on:
-      - postgres
-    ports:
-      - "8080:8080"
+    env_file:
+      - ./stack.env
     environment:
       - AIRFLOW__CORE__EXECUTOR=${AIRFLOW__CORE__EXECUTOR}
       - AIRFLOW__CORE__LOAD_EXAMPLES=${AIRFLOW__CORE__LOAD_EXAMPLES}
@@ -31,9 +28,7 @@ services:
                airflow webserver"
 
   streamlit:
-    build:
-      context: ./streamlit
-      pull_policy: build
+    build: ./streamlit
     ports:
       - "8501:8501"
     volumes:
