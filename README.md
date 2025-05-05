@@ -11,6 +11,6 @@ This repo runs Python jobs (Airflow) and Streamlit apps on a local server using 
 ## Quick Start
 
 ```bash
-git clone https://github.com/kingofthekingfishers/jaynode.git
+git clone https://github.com/jayghez/jaynode.git
 cd jaynode
 docker-compose up -d --build
