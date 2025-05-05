@@ -11,7 +11,9 @@ services:
       - postgres-db:/var/lib/postgresql/data
 
   airflow:
-    build: ./airflow
+    build:
+      context: ./airflow
+      pull_policy: build
     depends_on:
       - postgres
     ports:
@@ -29,7 +31,9 @@ services:
                airflow webserver"
 
   streamlit:
-    build: ./streamlit
+    build:
+      context: ./streamlit
+      pull_policy: build
     ports:
       - "8501:8501"
     volumes:
