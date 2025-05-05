@@ -31,7 +31,7 @@ services:
     volumes:
     - ./streamlit:/app
     working_dir: /app
-    command: streamlit run app.py --server.port=8501 --server.enableCORS=false
+    command: streamlit run app.py --server.port=8501 --server.enableXsrfProtection=false
     ports:
      - "8501:8501"
   
