@@ -28,12 +28,11 @@ services:
                airflow webserver"
 
   streamlit:
-    build: ./streamlit
-    ports:
-      - "8501:8501"
+    build:
+    context: ./streamlit
     volumes:
-      - ./streamlit:/app
-    restart: unless-stopped
-
-volumes:
-  postgres-db:
+    - ./streamlit:/app
+    working_dir: /app
+    command: streamlit run app.py --server.port=8501 --server.enableCORS=false
+    ports:
+    - "8501:8501"
