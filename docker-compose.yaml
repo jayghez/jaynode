@@ -28,12 +28,12 @@ services:
 
   streamlit:
     build: ./streamlit
-    volumes:
-    - ./streamlit:/app
     working_dir: /app
-    command: streamlit run app.py --server.port=8501 --server.enableXsrfProtection=false
+    volumes:
+      - ./streamlit:/app
+    command: bash -c "ls -l && streamlit run app.py --server.port=8501 --server.enableXsrfProtection=false"
     ports:
-     - "8501:8501"
+      - "8501:8501"
   
 volumes:
   postgres-db:
