@@ -11,8 +11,7 @@ services:
       - postgres-db:/var/lib/postgresql/data
 
   airflow:
-    build:
-      context: ./airflow
+    build: ./airflow
     env_file:
       - ./stack.env
     environment:
@@ -28,8 +27,7 @@ services:
                airflow webserver"
 
   streamlit:
-    build:
-    context: ./streamlit
+    build: ./streamlit
     volumes:
     - ./streamlit:/app
     working_dir: /app
