@@ -28,7 +28,7 @@ services:
     ports:
       - "8081:8080"
 
-  scheduler:
+  airflow_scheduler:
     build: ./airflow
     env_file:
       - ./stack.env
@@ -40,8 +40,6 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags
     command: airflow scheduler
-    depends_on:
-      - postgres
   streamlit:
     build: ./streamlit
     ports:
