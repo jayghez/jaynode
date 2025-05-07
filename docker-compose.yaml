@@ -20,9 +20,7 @@ services:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW__CORE__FERNET_KEY}
     volumes:
-      - type: bind
-        source: /home/umbrel/umbrel/app-data/portainer/data/docker/compose/8/airflow/dags
-        target: /opt/airflow/dags
+      - ./airflow/dags:/opt/airflow/dags
     command: >
       bash -c "airflow db migrate &&
                airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com &&
