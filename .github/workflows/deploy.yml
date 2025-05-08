@@ -1,0 +1,25 @@
+name: Deploy to Umbrel
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH to Umbrel
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.UMBREL_IP }}
+          username: umbrel
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/jaynode
+            git pull origin main
+            docker compose pull
+            docker compose up -d --build
