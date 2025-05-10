@@ -1,0 +1,19 @@
+name: Deploy on Umbrel
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Pull latest code
+        run: |
+          cd ~/jaynode
+          git pull origin main
+
+      - name: Rebuild Docker
+        run: |
+          cd ~/jaynode
+          docker compose up -d --build
