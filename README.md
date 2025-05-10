@@ -1,12 +1,13 @@
-# jaynode
-personal compute node
+# Jaynode: Personal Server-based Compute Stack
 
-This repo runs Python jobs (Airflow) and Streamlit apps on a local server using Docker Compose.
+Jaynode is a self-hosted data stack on my personal node server, running:
 
-## Services
+- Apache Airflow (for Python DAGs)
+- Streamlit (for visualization apps)
+- PostgreSQL (shared DB instance)
+- GitHub Actions self-hosted runner (auto-deploys on push)
 
-- `airflow` – Runs job DAGs :8080
-- `streamlit` – Dashboard :8501
+---
 
 ## Quick Start
 
@@ -14,3 +15,46 @@ This repo runs Python jobs (Airflow) and Streamlit apps on a local server using 
 git clone https://github.com/jayghez/jaynode.git
 cd jaynode
 docker-compose up -d --build
+
+
+# Start stack (foreground build)
+docker compose up -d --build
+
+# Stop stack
+docker compose down
+
+# View container status
+docker compose ps
+```
+
+
+
+## 🤖 GitHub Actions Runner on Personal Server
+Runner folder, Run manually (foreground)::
+```
+~/actions-runner
+cd ~/actions-runner
+./run.sh
+```
+Run as a background service:
+
+```sudo ./svc.sh install
+sudo ./svc.sh start
+```
+
+Check logs:
+```
+sudo journalctl -u actions.runner.jayghez.jaynode.service -f
+```
+## 📁 Data Storage (Postgres)
+Use the same Postgres instance but a new schema:
+
+CREATE SCHEMA airflow_data;
+ayghez.jaynode
+
+
+
+
+
+
+
