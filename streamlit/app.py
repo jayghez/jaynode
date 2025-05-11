@@ -5,7 +5,7 @@ from finance_utils import normalize, save_to_db, load_recent
 st.title("💸 Personal Finance Dashboard")
 
 uploaded_file = st.file_uploader("Upload a CSV statement", type="csv")
-source = st.selectbox("Bank Source", ["usaa", "chase", "apple", "frost", "american_express"])
+source = st.selectbox("Bank source", ["USAA", "Chase", "Apple", "Amex", "Frost", "Pre-merged Union"])
 
 if uploaded_file:
     df_raw = pd.read_csv(uploaded_file)

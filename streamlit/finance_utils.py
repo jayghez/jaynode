@@ -10,25 +10,27 @@ DB_PARAMS = dict(
     host="postgres",
     port="5432"
 )
-
 def normalize(df, source):
     mappings = {
-        "usaa": {"Date":"Transaction Date", "Description":"Description", "Category":"Type", "Amount":"Amount"},
-        "chase": {},  # Already standard
-        "apple": {"Transaction Date":"Transaction Date", "Clearing Date": "Post Date", "Description":"Description", "Merchant":"Merchant", "Amount (USD)":"Amount"},
-        "frost": {},
-        "american_express": {"Transaction Date":"Transaction Date", "Clearing Date": "Post Date", "Description":"Description", "Merchant":"Merchant", "Amount (USD)":"Amount"}
+        "usaa": {"Date": "Transaction Date", "Description": "Description", "Category": "Type", "Amount": "Amount"},
+        "chase": {},  # Already standardized
+        "apple": {"Transaction Date": "Transaction Date", "Clearing Date": "Post Date", "Description": "Description", "Merchant": "Merchant", "Amount (USD)": "Amount"},
+        "frost": {},  # Already standardized
+        "american_express": {"Transaction Date": "Transaction Date", "Clearing Date": "Post Date", "Description": "Description", "Merchant": "Merchant", "Amount (USD)": "Amount"},
     }
 
-    if source in mappings:
-        df = df.rename(columns=mappings[source])
+    if source.lower() == "pre-merged union":
+        df['source'] = 'union'
+    else:
+        if source.lower() in mappings:
+            df = df.rename(columns=mappings[source.lower()])
+        df['Transaction Date'] = pd.to_datetime(df['Transaction Date'])
+        df['source'] = source
 
-    df['Transaction Date'] = pd.to_datetime(df['Transaction Date'])
-    df['source'] = source
-
-    # Combine description and merchant
-    if 'Merchant' in df.columns:
-        df['Description'] = df.apply(lambda row: f"{row['Description']} - {row['Merchant']}" if pd.notna(row['Merchant']) else row['Description'], axis=1)
+        if 'Merchant' in df.columns:
+            df['Description'] = df.apply(
+                lambda row: f"{row['Description']} - {row['Merchant']}" if pd.notna(row['Merchant']) else row['Description'], axis=1
+            )
 
     df['Amount_Changed'] = (
         df['Amount']
@@ -39,6 +41,7 @@ def normalize(df, source):
         .replace('', '0')
         .astype(float)
     )
+
     df['Transaction Type'] = df['Amount_Changed'].apply(lambda x: 'Income' if x > 0 else 'Spending')
 
     def generate_transaction_id(row):
