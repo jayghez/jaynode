@@ -20,7 +20,7 @@ def normalize(df, source):
     }
 
     if source.lower() == "pre-merged union":
-        df['source'] = 'union'
+        pass
     else:
         if source.lower() in mappings:
             df = df.rename(columns=mappings[source.lower()])
@@ -43,6 +43,7 @@ def normalize(df, source):
     )
 
     df['Transaction Type'] = df['Amount_Changed'].apply(lambda x: 'Income' if x > 0 else 'Spending')
+    df['Amount'] = df['Amount_Changed']
 
     def generate_transaction_id(row):
         uid = f"{row['Transaction Date']}_{row['Amount_Changed']}_{row['Description']}_{row['source']}"
