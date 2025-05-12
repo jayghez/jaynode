@@ -4,4 +4,4 @@ COPY . /app
 RUN pip install --upgrade pip && \
     pip install streamlit pandas psycopg2-binary matplotlib seaborn
 
-CMD streamlit run dashboard.py --server.port=8501 --server.enableXsrfProtection=false
+CMD streamlit run home.py --server.port=8501 --server.enableXsrfProtection=false

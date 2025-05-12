@@ -47,7 +47,7 @@ services:
       - "8501:8501"
     volumes:
       - ./streamlit:/app
-    command: streamlit run streamlit/home.py --server.port=8501 --server.enableXsrfProtection=false
+    command: streamlit run home.py --server.port=8501 --server.enableXsrfProtection=false
 
 
 volumes:
