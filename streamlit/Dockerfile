@@ -1,6 +1,7 @@
 FROM python:3.10-slim
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.enableXsrfProtection=false"]
+COPY . /app
+RUN pip install --upgrade pip && \
+    pip install streamlit pandas psycopg2 matplotlib seaborn
+
+CMD streamlit run apps/dashboard.py --server.port=8501 --server.enableXsrfProtection=false

@@ -40,10 +40,21 @@ services:
     volumes:
       - /home/umbrel/umbrel/app-data/portainer/data/docker/compose/8/airflow/dags:/opt/airflow/dags
     command: airflow scheduler
-  streamlit:
+
+  streamlit_dashboard:
     build: ./streamlit
     ports:
       - "8501:8501"
-  
+    volumes:
+      - ./streamlit:/app
+    command: streamlit run apps/dashboard.py --server.port=8501 --server.enableXsrfProtection=false
+
+  streamlit_insights:
+    build: ./streamlit
+    ports:
+      - "8502:8502"
+    volumes:
+      - ./streamlit:/app
+    command: streamlit run apps/insights.py --server.port=8502 --server.enableXsrfProtection=false
 volumes:
   postgres-db:

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from finance_utils import normalize, save_to_db, load_recent
 
-st.title("💸 Personal Finance Dashboard")
+st.title("💸 Personal Finance Uploader and Table Viewer")
 
 uploaded_file = st.file_uploader("Upload a CSV statement", type="csv")
 source = st.selectbox("Bank source", ["USAA", "Chase", "Apple", "Amex", "Frost", "Pre-merged Union"])

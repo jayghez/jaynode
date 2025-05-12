@@ -11,7 +11,8 @@ Jaynode is a self-hosted data stack on my personal node server, running:
 
 ## Current Ports
 
-Streamlit App for Personal Finaces xs
+Streamlit App for Personal Finaces 8501:8502
+Airflow UI :8081
 
 
 ## Quick Start
