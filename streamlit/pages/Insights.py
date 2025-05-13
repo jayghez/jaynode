@@ -24,8 +24,9 @@ def load_data():
     df = pd.read_sql("SELECT * FROM airflow_data.transactions", conn)
     conn.close()
     df['transaction_date'] = pd.to_datetime(df['transaction_date'])
-    df['month'] = df['transaction_date'].dt.to_period('M')
-    df['week'] = df['transaction_date'].dt.to_period('W')
+    df['month'] = df['transaction_date'].dt.to_period('M').dt.start_time
+    df['week'] = df['transaction_date'].dt.to_period('W').dt.start_time
+    
     return df
 
 # Load data
