@@ -26,7 +26,6 @@ def load_data():
     df['transaction_date'] = pd.to_datetime(df['transaction_date'])
     df['month'] = df['transaction_date'].dt.to_period('M').dt.start_time
     df['week'] = df['transaction_date'].dt.to_period('W').dt.start_time
-    
     return df
 
 # Load data
@@ -41,12 +40,14 @@ max_date = df['transaction_date'].max()
 start_date, end_date = st.sidebar.date_input("Date range", [min_date, max_date])
 sources = st.sidebar.multiselect("Source", df['source'].unique(), default=list(df['source'].unique()))
 categories = st.sidebar.multiselect("Category", df['category'].dropna().unique(), default=list(df['category'].dropna().unique()))
+types = st.sidebar.multiselect("Type", df['type'].dropna().unique(), default=list(df['type'].dropna().unique()))
 
 filtered = df[
     (df['transaction_date'] >= pd.to_datetime(start_date)) &
     (df['transaction_date'] <= pd.to_datetime(end_date)) &
     (df['source'].isin(sources)) &
-    (df['category'].isin(categories))
+    (df['category'].isin(categories)) &
+    (df['type'].isin(types))
 ]
 
 # Summary KPIs
@@ -69,6 +70,7 @@ sns.set_theme()
 fig1, ax1 = plt.subplots()
 sns.lineplot(data=weekly, x='week', y='amount_changed', marker="o", ax=ax1)
 ax1.set_ylabel("Weekly Spend ($)")
+ax1.invert_yaxis()
 st.pyplot(fig1)
 
 # Monthly category-source totals
@@ -94,6 +96,7 @@ fig2, ax2 = plt.subplots(figsize=(10, 4))
 sns.heatmap(heatmap_data.T, cmap="Reds", linewidths=0.5, annot=True, fmt=".0f")
 ax2.set_xlabel("Month")
 ax2.set_ylabel("Source")
+ax2.set_xticklabels([d.strftime("%b %Y") for d in heatmap_data.index], rotation=45, ha='right')
 st.pyplot(fig2)
 
 # Transaction table
