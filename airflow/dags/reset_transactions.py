@@ -37,7 +37,7 @@ def reset_transactions_table():
     print("✅ Table reset complete.")
 
 with DAG(
-    dag_id='reset_transactions_table',
+    dag_id='reset_transactions',
     default_args=default_args,
     schedule_interval=None,  # Run manually
     catchup=False
