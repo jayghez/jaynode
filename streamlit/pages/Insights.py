@@ -130,7 +130,7 @@ st.dataframe(
 )
 
 # ────────────────────────────────────────────────
-# ▸ SPEND BY CATEGORY × SOURCE  (Pivot table)
+# ▸ SPEND BY CATEGORY × SOURCE  (pivot + row total)
 # ────────────────────────────────────────────────
 st.subheader("🏷️ Spend by Category and Source")
 
@@ -138,11 +138,21 @@ cat_src = (
     filtered.query("transaction_type == 'Spending'")
             .groupby(["category", "source"])["amount_changed"]
             .sum()
-            .unstack(fill_value=0)               # columns = sources
-            .sort_values(by=sources, ascending=False, axis=0)  # sources = current sidebar selection
+            .unstack(fill_value=0)        # columns → sources
 )
 
+# Add a Total column and bring it to the front
+cat_src["Total"] = cat_src.sum(axis=1)
+# make Total the first column
+cat_src = cat_src[["Total", *cat_src.columns.drop('Total')]]
+
+# Sort categories by Total descending
+cat_src = cat_src.sort_values(by="Total", ascending=False)
+
+# Nice $ formatting for every cell
+cat_src_fmt = cat_src.applymap(lambda x: f"${x:,.0f}")
+
 st.dataframe(
-    cat_src.applymap(lambda x: f"${x:,.0f}"),
-    use_container_width=True
+    cat_src_fmt,
+    use_container_width=True,
 )
