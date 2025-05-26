@@ -113,11 +113,19 @@ st.subheader("🧾 Filtered Transactions")
 
 visible_cols = (
     filtered.sort_values(by="transaction_date", ascending=False)
-            .loc[:, ["transaction_date", "source", "category", "transaction_type", "amount_changed"]]
+            .loc[:, [
+                "transaction_date",
+                "source",
+                "category",
+                "description",        # ← new
+                "transaction_type",
+                "amount_changed"
+            ]]
             .rename(columns={
                 "transaction_date": "Transaction Date",
                 "source":           "Source",
                 "category":         "Category",
+                "description":      "Description",      # ← new
                 "transaction_type": "Transaction Type",
                 "amount_changed":   "Amount Charged"
             })
@@ -128,7 +136,6 @@ st.dataframe(
     use_container_width=True,
     hide_index=True
 )
-
 # ────────────────────────────────────────────────
 # ▸ SPEND BY CATEGORY × SOURCE  (pivot + row total)
 # ────────────────────────────────────────────────
