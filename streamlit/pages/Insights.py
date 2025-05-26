@@ -128,3 +128,21 @@ st.dataframe(
     use_container_width=True,
     hide_index=True
 )
+
+# ────────────────────────────────────────────────
+# ▸ SPEND BY CATEGORY × SOURCE  (Pivot table)
+# ────────────────────────────────────────────────
+st.subheader("🏷️ Spend by Category and Source")
+
+cat_src = (
+    filtered.query("transaction_type == 'Spending'")
+            .groupby(["category", "source"])["amount_changed"]
+            .sum()
+            .unstack(fill_value=0)               # columns = sources
+            .sort_values(by=sources, ascending=False, axis=0)  # sources = current sidebar selection
+)
+
+st.dataframe(
+    cat_src.applymap(lambda x: f"${x:,.0f}"),
+    use_container_width=True
+)
