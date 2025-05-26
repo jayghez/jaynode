@@ -1,7 +1,8 @@
 import streamlit as st
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import date
 from typing import List
+from decimal import Decimal
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -41,7 +42,6 @@ class Goal:
     target_amount: float
     allocation: float = 0.0  # calculated, not stored
 
-
 # ------------------------------------------------------------------------
 # Helpers – connection & bootstrap
 # ------------------------------------------------------------------------
@@ -71,12 +71,25 @@ def fetch_goals() -> list[dict]:
             """
         )
         rows = cur.fetchall()
-    return rows  # ==> pickle‑serialisable list[dict]
+    return rows  # pickle‑serialisable list[dict]
 
 
 def dicts_to_goals(rows: list[dict]) -> List[Goal]:
-    return [Goal(**row) for row in rows]
-
+    clean_rows: List[Goal] = []
+    for row in rows:
+        tgt_amt = row["target_amount"]
+        # Ensure we work with floats, not Decimal, to avoid math type errors
+        if isinstance(tgt_amt, Decimal):
+            tgt_amt = float(tgt_amt)
+        clean_rows.append(
+            Goal(
+                id=row["id"],
+                name=row["name"],
+                target_date=row["target_date"],
+                target_amount=tgt_amt,
+            )
+        )
+    return clean_rows
 
 # ------------------------------------------------------------------------
 # Waterfall allocation (Option A)
@@ -86,7 +99,7 @@ def allocate_cash(total_balance: float, goals: List[Goal]) -> List[Goal]:
     others = [g for g in goals if g is not catch_all]
     others.sort(key=lambda g: g.target_date)
 
-    remaining = total_balance
+    remaining = float(total_balance)
     for g in others:
         need = max(g.target_amount - g.allocation, 0)
         g.allocation = min(need, remaining)
@@ -98,7 +111,6 @@ def allocate_cash(total_balance: float, goals: List[Goal]) -> List[Goal]:
     else:
         ordered = others
     return ordered
-
 
 # ------------------------------------------------------------------------
 # Write helpers (invalidate cache afterwards)
@@ -134,7 +146,6 @@ def update_goal(goal_id: int, target_date: date, target_amount: float):
         )
     fetch_goals.clear()
 
-
 # ------------------------------------------------------------------------
 # Streamlit UI
 # ------------------------------------------------------------------------
@@ -144,7 +155,9 @@ def main():
     st.title("💰 Savings Goal Manager")
 
     # 1️⃣ Balance input
-    total_balance = st.number_input("Savings account balance", value=10_000.0, step=100.0)
+    total_balance = st.number_input(
+        "Savings account balance", value=10_000.0, step=100.0, format="%f"
+    )
 
     # 2️⃣ Add goal form
     with st.expander("➕ Add a new goal"):
@@ -165,7 +178,10 @@ def main():
     # 4️⃣ Display cards
     for g in goals:
         st.subheader(f"{g.name} — ${g.allocation:,.0f} / ${g.target_amount:,.0f}")
-        st.progress(min(g.allocation / g.target_amount, 1.0))
+        progress_val = 0.0
+        if g.target_amount > 0:
+            progress_val = min(g.allocation / float(g.target_amount), 1.0)
+        st.progress(progress_val)
 
         if g.name.lower() != "emergency fund":
             col_del, col_edit = st.columns(2)
@@ -174,7 +190,9 @@ def main():
                 st.experimental_rerun()
             if col_edit.button("✏️ Edit", key=f"edit_{g.id}"):
                 with st.modal(f"Edit {g.name}"):
-                    new_amt = st.number_input("Target amount ($)", value=g.target_amount, step=50.0)
+                    new_amt = st.number_input(
+                        "Target amount ($)", value=float(g.target_amount), step=50.0
+                    )
                     new_dt = st.date_input("Target date", value=g.target_date)
                     if st.button("Save changes"):
                         update_goal(g.id, new_dt, new_amt)
