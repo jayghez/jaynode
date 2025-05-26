@@ -6,48 +6,49 @@ Streamlit page for managing savings "envelopes" with a water‑fall rule.
 * Other goals are filled fully (Option A) in chronological order.
 * Data lives in an existing Postgres DB (same one your other pages use).
 ---------------------------------------------------------------------
-Update highlights (May 26 2025)
-* Fix Decimal ⇢ float mismatch causing TypeError in progress bar.
-* Replace `st.experimental_rerun` with a robust `_rerun()` fallback that
-  works on older Streamlit releases.
-* Ensure an Emergency Fund row is always present (auto‑insert if missing).
+May 26 2025 — v1.3
+* Fix: `st.cache_data` could not pickle custom dataclass objects on some
+  older Streamlit builds.  We now cache a plain list‑of‑dicts and convert
+  to `Goal` objects inside the UI layer.  This removes
+  `UnserializableReturnValueError` once and for all.
+* Left the `_rerun()` fallback for Streamlit versions lacking
+  `st.experimental_rerun`.
 """
-
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
-from typing import List
+from typing import List, Dict, Any
 import streamlit as st
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 # ------------------------------------------------------------------
-# DB CONFIG  — adjust if credentials differ on your Umbrel instance.
+# DB CONFIG — adjust if credentials differ on your Umbrel instance.
 # ------------------------------------------------------------------
 DB_PARAMS = dict(
-    dbname="airflow",  # ← change if your finance Stack uses a different DB
+    dbname="airflow",  # ← change if your finance stack uses a different DB
     user="airflow",
     password="airflow",
     host="postgres",
     port="5432",
 )
 
-# ----------------------------- Helpers ----------------------------
+# ----------------------------- Dataclass ---------------------------
 @dataclass
 class Goal:
     id: int | None  # None until inserted
     name: str
     target_date: date
-    target_amount: float  # stored in USD (float OK once converted)
+    target_amount: float
     allocation: float = 0.0  # calculated at runtime
 
-# Fallback rerun helper (for Streamlit < 1.10 where experimental_rerun absent)
+# ------------------------- Rerun helper ----------------------------
 def _rerun():
+    """Cross‑version rerun: works even if experimental_rerun is missing."""
     if hasattr(st, "experimental_rerun"):
         st.experimental_rerun()
     else:
-        # Flip a dummy key in session_state to trigger an app rerun
         st.session_state["_force_rerun"] = st.session_state.get("_force_rerun", 0) + 1
 
 # ----------------------- Cached connections -----------------------
@@ -72,6 +73,7 @@ def init_db():
         conn.commit()
     ensure_emergency_fund()
 
+
 def ensure_emergency_fund():
     """Insert a default Emergency Fund goal if one is missing."""
     with get_conn() as conn, conn.cursor() as cur:
@@ -84,23 +86,31 @@ def ensure_emergency_fund():
             conn.commit()
 
 # ------------------------- CRUD helpers ---------------------------
+
+def _dict_to_goal(row: Dict[str, Any]) -> Goal:
+    return Goal(
+        id=row["id"],
+        name=row["name"],
+        target_date=row["target_date"],
+        target_amount=float(row["target_amount"]),
+    )
+
+
 @st.cache_data(show_spinner=False)
-def fetch_goals() -> List[Goal]:
-    """Return a list of Goal objects (pickle‑friendly)."""
+def fetch_goal_dicts() -> List[Dict[str, Any]]:
+    """Return a pickle‑friendly list of dicts (no fancy objects)."""
     with get_conn() as conn, conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("SELECT * FROM saving_goals ORDER BY id;")
         rows = cur.fetchall()
-    # Convert Decimal → float to avoid math errors
-    goals = [
-        Goal(
-            id=row["id"],
-            name=row["name"],
-            target_date=row["target_date"],
-            target_amount=float(row["target_amount"]),
-        )
-        for row in rows
-    ]
-    return goals
+    # Convert Decimal → float and date stays as datetime.date (pickle‑able)
+    for r in rows:
+        r["target_amount"] = float(r["target_amount"])
+    return rows
+
+
+def clear_cache():
+    fetch_goal_dicts.clear()
+
 
 def add_goal(name: str, target_date: date, amount: float):
     with get_conn() as conn, conn.cursor() as cur:
@@ -109,7 +119,7 @@ def add_goal(name: str, target_date: date, amount: float):
             (name, target_date, Decimal(str(amount))),
         )
         conn.commit()
-    st.cache_data.clear()
+    clear_cache()
 
 
 def update_goal(goal_id: int, target_date: date, amount: float):
@@ -119,14 +129,14 @@ def update_goal(goal_id: int, target_date: date, amount: float):
             (target_date, Decimal(str(amount)), goal_id),
         )
         conn.commit()
-    st.cache_data.clear()
+    clear_cache()
 
 
 def delete_goal(goal_id: int):
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute("DELETE FROM saving_goals WHERE id=%s;", (goal_id,))
         conn.commit()
-    st.cache_data.clear()
+    clear_cache()
 
 # --------------------- Allocation algorithm ----------------------
 
@@ -135,8 +145,7 @@ def allocate_cash(total_balance: float, goals: List[Goal]) -> List[Goal]:
     catch_all = next((g for g in goals if g.name.lower() == "emergency fund"), None)
     others = [g for g in goals if g is not catch_all]
 
-    # Sort by soonest date
-    others.sort(key=lambda g: g.target_date)
+    others.sort(key=lambda g: g.target_date)  # chronological
 
     remaining = total_balance
     for g in others:
@@ -165,8 +174,8 @@ def main():
     # ------------------ Add a new goal ------------------------
     with st.expander("➕ Add a new goal"):
         name = st.text_input("Goal name")
-        target_date = st.date_input("Target date", value=date(2025, 12, 1))
-        amount = st.number_input("Target amount ($)", min_value=0.0, step=50.0)
+        target_date = st.date_input("Target date", value=date(2025, 12, 1), key="new_goal_date")
+        amount = st.number_input("Target amount ($)", min_value=0.0, step=50.0, key="new_goal_amount")
         if st.button("Add goal"):
             if not name.strip():
                 st.warning("Name cannot be empty.")
@@ -175,7 +184,8 @@ def main():
                 _rerun()
 
     # ------------------ Load, allocate, display ---------------
-    goals = fetch_goals()
+    goal_dicts = fetch_goal_dicts()
+    goals = [_dict_to_goal(d) for d in goal_dicts]
     goals = allocate_cash(total_balance, goals)
 
     for g in goals:
@@ -188,11 +198,11 @@ def main():
             if col1.button("Delete", key=f"del_{g.id}"):
                 delete_goal(g.id)
                 _rerun()
-            if col2.button("Edit", key=f"edit_{g.id}"):
+            if col2.button("✏️ Edit", key=f"edit_{g.id}"):
                 with st.modal(f"Edit {g.name}"):
-                    new_amount = st.number_input("Target amount ($)", value=g.target_amount, step=50.0)
-                    new_date = st.date_input("Target date", value=g.target_date)
-                    if st.button("Save changes"):
+                    new_amount = st.number_input("Target amount ($)", value=g.target_amount, step=50.0, key=f"amt_{g.id}")
+                    new_date = st.date_input("Target date", value=g.target_date, key=f"date_{g.id}")
+                    if st.button("Save changes", key=f"save_{g.id}"):
                         update_goal(g.id, new_date, new_amount)
                         _rerun()
 
