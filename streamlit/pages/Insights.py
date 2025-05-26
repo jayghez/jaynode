@@ -5,7 +5,7 @@ import psycopg2
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.ticker import FuncFormatter
-from finance_utils import DB_PARAMS
+from finance_utils import DB_PARAMS ,find_monthly_subscriptions
 
 st.set_page_config(layout="wide")
 st.title("📊 Personal Finance Insights")
@@ -163,3 +163,10 @@ st.dataframe(
     cat_src_fmt,
     use_container_width=True,
 )
+
+# ────────────────────────────────────────────────
+# ▸     SUB FINDER
+# ────────────────────────────────────────────────
+st.subheader("🔁 Suspected Monthly Subscriptions")
+subs_df = find_monthly_subscriptions(filtered)
+st.dataframe(subs_df.style.format({'Amount': '${:,.2f}'}), use_container_width=True)
