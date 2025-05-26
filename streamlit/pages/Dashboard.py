@@ -19,7 +19,7 @@ st.title("💸 Personal Finance Uploader & Dashboard")
 # 1.  CSV UPLOAD  +  SAVE
 # ────────────────────────────────────────────────
 uploaded_file = st.file_uploader("Upload a CSV statement", type="csv")
-source = st.selectbox("Bank source", ["USAA", "Chase", "Apple", "Amex", "Frost", "Pre-merged Union"])
+source = st.selectbox("Bank source",[ "Pre-merged Union"])
 
 if uploaded_file:
     df_raw = pd.read_csv(uploaded_file)
